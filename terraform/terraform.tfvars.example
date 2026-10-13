@@ -1,0 +1,16 @@
+project_name = "msa-final"
+region = "ap-northeast-2"
+cluster_name = "msa-final-eks"
+kubernetes_version = "1.35" # Replace with available EKS version in your region
+admin_cidrs = ["203.0.113.10/32"] # Replace with YOUR current public IP/32
+# IMPORTANT: this is an example only. Match your repository's actual GitHub OIDC subject.
+# Legacy repos might use: repo:OWNER/REPO:ref:refs/heads/main
+# Newer repositories may use immutable @owner_id/@repo_id components.
+github_oidc_subject = "repo:REPLACE_OWNER/REPLACE_REPO:ref:refs/heads/main"
+admin_alert_email = "" # Optional, confirm SNS email subscription after apply
+
+# Must match an existing Route53 PUBLIC hosted zone under your own domain.
+domain_name  = "shop.example.com"
+hosted_zone_id = "Z1234567890ABC"
+# SES sender requires identity verification and sandbox removal / verified recipients.
+ses_sender_email = "orders@example.com"

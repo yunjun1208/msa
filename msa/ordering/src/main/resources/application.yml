@@ -1,0 +1,13 @@
+spring:
+  profiles:
+    default: prod
+
+# Product / Member 서비스와 동일하게 Actuator 메트릭을 제공
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    prometheus:
+      enabled: true

@@ -1,0 +1,112 @@
+name: CI - build SHA-tagged images and update GitOps manifests
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'msa/apigateway/**'
+      - 'msa/member/**'
+      - 'msa/ordering/**'
+      - 'msa/product/**'
+      - 'msa/frontend/**'
+      - '.github/workflows/deploy_ordermsa_with_k8s.yml'
+  workflow_dispatch:
+permissions:
+  id-token: write
+  contents: write
+concurrency:
+  group: msa-image-update-main
+  cancel-in-progress: false
+jobs:
+  build-and-update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Node.js unit tests / frontend syntax
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check order-event consumer and front-end JavaScript
+        run: |
+          node --test tests/lambda.test.mjs
+          node --check msa/frontend/src/assets/app.js
+      - name: Python source / YAML static checks
+        run: |
+          python3 -m pip install --quiet PyYAML
+          python3 tests/validate_assets.py
+      - name: Detect source changes
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            gateway:
+              - 'msa/apigateway/**'
+            member:
+              - 'msa/member/**'
+            ordering:
+              - 'msa/ordering/**'
+            product:
+              - 'msa/product/**'
+            frontend:
+              - 'msa/frontend/**'
+      - name: Configure AWS using GitHub OIDC
+        if: github.event_name == 'workflow_dispatch' || steps.changes.outputs.gateway == 'true' || steps.changes.outputs.member == 'true' || steps.changes.outputs.ordering == 'true' || steps.changes.outputs.product == 'true' || steps.changes.outputs.frontend == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'ap-northeast-2' }}
+      - name: Login to ECR
+        if: github.event_name == 'workflow_dispatch' || steps.changes.outputs.gateway == 'true' || steps.changes.outputs.member == 'true' || steps.changes.outputs.ordering == 'true' || steps.changes.outputs.product == 'true' || steps.changes.outputs.frontend == 'true'
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: Build/push and update manifests
+        if: github.event_name == 'workflow_dispatch' || steps.changes.outputs.gateway == 'true' || steps.changes.outputs.member == 'true' || steps.changes.outputs.ordering == 'true' || steps.changes.outputs.product == 'true' || steps.changes.outputs.frontend == 'true'
+        env:
+          REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+          GATEWAY_CHANGED: ${{ steps.changes.outputs.gateway }}
+          MEMBER_CHANGED: ${{ steps.changes.outputs.member }}
+          ORDERING_CHANGED: ${{ steps.changes.outputs.ordering }}
+          PRODUCT_CHANGED: ${{ steps.changes.outputs.product }}
+          FRONTEND_CHANGED: ${{ steps.changes.outputs.frontend }}
+          FORCE_ALL: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          set -euo pipefail
+          declare -A changed=(
+            [apigateway]="$GATEWAY_CHANGED"
+            [member]="$MEMBER_CHANGED"
+            [ordering]="$ORDERING_CHANGED"
+            [product]="$PRODUCT_CHANGED"
+            [frontend]="$FRONTEND_CHANGED"
+          )
+          for service in apigateway member ordering product frontend; do
+            if [[ "$FORCE_ALL" != 'true' && "${changed[$service]}" != 'true' ]]; then continue; fi
+            case "$service" in
+              apigateway) repo=apigateway ;;
+              *) repo="$service-service" ;;
+            esac
+            image="$REGISTRY/$repo:$IMAGE_TAG"
+            docker build -t "$image" -f "msa/$service/Dockerfile" "msa/$service"
+            docker push "$image"
+            manifest="msa/$service/k8s/depl_svc.yml"
+            IMAGE="$image" MANIFEST="$manifest" python3 - <<'PYCODE'
+          import os, re
+          from pathlib import Path
+          path = Path(os.environ['MANIFEST'])
+          original = path.read_text()
+          updated, count = re.subn(r'(?m)^(\s*image:\s*)[^\r\n]+$', lambda m: m.group(1) + os.environ['IMAGE'], original, count=1)
+          if count != 1:
+              raise SystemExit('Expected one Deployment image in ' + str(path))
+          path.write_text(updated)
+          PYCODE
+          done
+      - name: Commit image tag changes for Argo CD
+        if: github.event_name == 'workflow_dispatch' || steps.changes.outputs.gateway == 'true' || steps.changes.outputs.member == 'true' || steps.changes.outputs.ordering == 'true' || steps.changes.outputs.product == 'true' || steps.changes.outputs.frontend == 'true'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add msa/*/k8s/depl_svc.yml
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "ci: advance GitOps image tags to ${GITHUB_SHA} [skip ci]"
+          git push origin HEAD:main

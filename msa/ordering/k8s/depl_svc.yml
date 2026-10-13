@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ordering-depl
+  namespace: soldesk
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ordering
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8080"
+      labels:
+        app: ordering
+    spec:
+      serviceAccountName: ordering-sa
+      containers:
+      - name: ordering-container
+        image: 111122223333.dkr.ecr.ap-northeast-2.amazonaws.com/ordering-service:REPLACE_WITH_CI_SHA
+        ports:
+        - containerPort: 8080
+        resources:
+        # 컨테이너가 사용할수 있는 리소스의 최대치
+          limits:
+            cpu: "500m"
+            memory: "500Mi"
+        # 컨테이너가 시작될떄 보장받아야 하는 최소 자원
+          requests:
+            cpu: "100m"
+            memory: "250Mi"
+        env:
+        - name: DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: ordering-db-secret
+              key: DB_HOST
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: ordering-db-secret
+              key: DB_USER
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: ordering-db-secret
+              key: DB_NAME
+        - name: DB_PW
+          valueFrom:
+            secretKeyRef:
+              name: ordering-db-secret
+              key: DB_PW
+        - name: INTERNAL_SERVICE_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: internal-service-secret
+              key: INTERNAL_SERVICE_TOKEN
+        - name: ORDER_EVENTS_ENABLED
+          value: "true"
+        - name: ORDER_EVENTS_TOPIC_ARN
+          valueFrom:
+            configMapKeyRef:
+              name: msa-runtime-config
+              key: ORDER_EVENTS_TOPIC_ARN
+        # 컨테이너 상태 확인
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 20
+          timeoutSeconds: 3
+          failureThreshold: 3
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ordering-service
+  namespace: soldesk
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: ordering

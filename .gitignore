@@ -1,0 +1,30 @@
+**/.gradle/
+**/build/
+**/.idea/
+**/.DS_Store
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+# terraform plan may contain cleartext sensitive values
+tfplan
+*.tfplan
+# generated local Lambda archive
+terraform/lambda/order_notifications/consumer.zip
+# local diagnostic artifacts
+*.log
+
+# Local CI/CD review files
+/CI_CD_review.zip
+/CI_CD_collect_fixed.ps1
+
+# IDE local settings
+**/.project
+**/.settings/
