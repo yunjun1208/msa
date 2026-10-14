@@ -24,7 +24,7 @@ for svc in services:
     assert deployment.is_file(), deployment
     manifest = deployment.read_text()
     assert ('REPLACE_WITH_CI_SHA' in manifest or re.search(r'image: .*:[0-9a-f]{40}\b', manifest)), f'CI SHA image format missing: {svc}'
-    assert '256187519952' not in manifest, 'Old account ID remains'
+    assert '111122223333' not in manifest, f'Sample ECR account ID remains: {svc}'
 
 for svc in ('member', 'product', 'ordering'):
     deploy = (ROOT / f'msa/{svc}/k8s/depl_svc.yml').read_text()
