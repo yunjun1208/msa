@@ -66,6 +66,13 @@ spec:
               name: msa-runtime-config
               key: ORDER_EVENTS_TOPIC_ARN
         # 컨테이너 상태 확인
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 18
         readinessProbe:
           httpGet:
             path: /health

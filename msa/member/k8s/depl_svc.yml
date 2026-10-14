@@ -74,6 +74,13 @@ spec:
               name: jwt-secrets
               key: ADMIN_BOOTSTRAP_PASSWORD
         # Readiness: 요청을 받을 준비가 되었는지 확인
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 18
         readinessProbe:
           httpGet:
             path: /health

@@ -61,6 +61,13 @@ spec:
                 configMapKeyRef:
                   name: msa-runtime-config
                   key: PRODUCT_IMAGE_BUCKET
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 18
           readinessProbe:
             httpGet:
               path: /health

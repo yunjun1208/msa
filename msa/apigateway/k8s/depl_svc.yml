@@ -40,6 +40,13 @@ spec:
               name: jwt-secrets
               key: JWT_ACCESS_SECRET
         # Readiness: API Gateway 트래픽 수신 준비 확인
+        startupProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 18
         readinessProbe:
           httpGet:
             path: /actuator/health
