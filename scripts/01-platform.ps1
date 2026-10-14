@@ -64,7 +64,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Helm repositories 갱신 실패' }
 if ($LASTEXITCODE -ne 0) { throw 'AWS Load Balancer Controller 설치 실패' }
 & helm upgrade --install external-dns external-dns/external-dns -n kube-system --wait --timeout 10m `
   --set provider.name=aws --set serviceAccount.create=false --set serviceAccount.name=external-dns `
-  --set policy=upsert-only --set "txtOwnerId=$cluster" --set sources[0]=ingress
+  --set policy=upsert-only --set "txtOwnerId=$cluster" --set "sources[0]=service" `
+  --set "domainFilters[0]=$(TF 'site_domain')"
 if ($LASTEXITCODE -ne 0) { throw 'ExternalDNS 설치 실패' }
 & helm upgrade --install cluster-autoscaler autoscaler/cluster-autoscaler -n kube-system --wait --timeout 10m `
   --set "autoDiscovery.clusterName=$cluster" --set "awsRegion=$region" `

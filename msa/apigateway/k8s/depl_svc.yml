@@ -32,6 +32,8 @@ spec:
             cpu: "100m"
             memory: "250Mi"
         env:
+        - name: APP_ALLOWED_ORIGIN
+          value: 'https://server.aws-cisco.com'
         - name: JWT_ACCESS_SECRET
           valueFrom:
             secretKeyRef:

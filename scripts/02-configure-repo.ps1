@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 # Generates environment-specific GitOps manifests and creates runtime Kubernetes secrets.
 # The script does not push Git changes nor run AWS terraform apply.
 [CmdletBinding()]
@@ -10,8 +10,8 @@ function TF([string]$name) {
   if ($LASTEXITCODE -ne 0) { throw "Terraform output '$name' 실패" }
   return ($v | Out-String).Trim()
 }
-$domain = TF 'site_domain'
-$cert = TF 'acm_certificate_arn'
+$domain = TF 'nlb_site_domain'
+$cert = TF 'nlb_site_certificate_arn'
 if ([string]::IsNullOrWhiteSpace($domain) -or [string]::IsNullOrWhiteSpace($cert)) {
   throw '도메인·Route53 Hosted Zone·ACM 인증서가 Terraform에서 준비되어야 합니다.'
 }
@@ -55,7 +55,6 @@ $placeholders = @{
   '__REGION__' = (TF 'aws_region')
 }
 $templates = @{
-  'deploy/templates/alb-ingress.yml.tpl' = 'msa/k8s/k8s-services/ingress.yml';
   'deploy/templates/runtime-config.yml.tpl' = 'msa/k8s/k8s-services/runtime-config.yml';
   'deploy/templates/alertmanager.yml.tpl' = 'msa/k8s/k8s-monitoring/alertmanager.yml'
 }
@@ -83,6 +82,22 @@ foreach ($source in $templates.Keys) {
         (New-Object System.Text.UTF8Encoding($false))
     )
 }
+# Render NLB Service annotations after ACM DNS validation.
+$frontendServicePath = Join-Path (Get-Location) 'msa/frontend/k8s/depl_svc.yml'
+$frontendService = [System.IO.File]::ReadAllText($frontendServicePath)
+$frontendService = $frontendService.Replace('__NLB_SITE_DOMAIN__', $domain)
+$frontendService = $frontendService.Replace('__NLB_CERT_ARN__', $cert)
+if ($frontendService.Contains('__NLB_')) {
+    throw 'Unresolved NLB Service placeholders'
+}
+[System.IO.File]::WriteAllText($frontendServicePath, $frontendService, (New-Object System.Text.UTF8Encoding($false)))
+
+# Protect against accidentally publishing an obsolete ALB ingress.
+$legacyAlbManifest = Join-Path (Get-Location) 'msa/k8s/k8s-services/ingress.yml'
+if (Test-Path -LiteralPath $legacyAlbManifest) {
+    throw "Existing ALB ingress manifest detected: $legacyAlbManifest. Review and remove it after verifying your current ALB is no longer needed."
+}
+
 Get-ChildItem argocd -Recurse -Filter '*.yml' | ForEach-Object {
   $contents = [System.IO.File]::ReadAllText($_.FullName)
   $contents = $contents.Replace('https://github.com/REPLACE_OWNER/REPLACE_REPO.git', $RepoUrl)

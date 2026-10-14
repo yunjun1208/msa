@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: msa-runtime-config
+  namespace: soldesk
+data:
+  PRODUCT_IMAGE_BUCKET: 'msa-final-256187519952-ap-northeast-2-images'
+  ORDER_EVENTS_TOPIC_ARN: 'arn:aws:sns:ap-northeast-2:256187519952:msa-final-order-events'

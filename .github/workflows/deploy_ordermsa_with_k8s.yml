@@ -36,6 +36,7 @@ jobs:
           python3 -m pip install --quiet PyYAML
           python3 tests/validate_assets.py
       - name: Detect source changes
+        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
         uses: dorny/paths-filter@v3
         id: changes
         with:
@@ -51,17 +52,17 @@ jobs:
             frontend:
               - 'msa/frontend/**'
       - name: Configure AWS using GitHub OIDC
-        if: github.event_name == 'workflow_dispatch' || steps.changes.outputs.gateway == 'true' || steps.changes.outputs.member == 'true' || steps.changes.outputs.ordering == 'true' || steps.changes.outputs.product == 'true' || steps.changes.outputs.frontend == 'true'
+        if: github.event_name == 'workflow_dispatch' || github.event.before == '0000000000000000000000000000000000000000' || steps.changes.outputs.gateway == 'true' || steps.changes.outputs.member == 'true' || steps.changes.outputs.ordering == 'true' || steps.changes.outputs.product == 'true' || steps.changes.outputs.frontend == 'true'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION || 'ap-northeast-2' }}
       - name: Login to ECR
-        if: github.event_name == 'workflow_dispatch' || steps.changes.outputs.gateway == 'true' || steps.changes.outputs.member == 'true' || steps.changes.outputs.ordering == 'true' || steps.changes.outputs.product == 'true' || steps.changes.outputs.frontend == 'true'
+        if: github.event_name == 'workflow_dispatch' || github.event.before == '0000000000000000000000000000000000000000' || steps.changes.outputs.gateway == 'true' || steps.changes.outputs.member == 'true' || steps.changes.outputs.ordering == 'true' || steps.changes.outputs.product == 'true' || steps.changes.outputs.frontend == 'true'
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
       - name: Build/push and update manifests
-        if: github.event_name == 'workflow_dispatch' || steps.changes.outputs.gateway == 'true' || steps.changes.outputs.member == 'true' || steps.changes.outputs.ordering == 'true' || steps.changes.outputs.product == 'true' || steps.changes.outputs.frontend == 'true'
+        if: github.event_name == 'workflow_dispatch' || github.event.before == '0000000000000000000000000000000000000000' || steps.changes.outputs.gateway == 'true' || steps.changes.outputs.member == 'true' || steps.changes.outputs.ordering == 'true' || steps.changes.outputs.product == 'true' || steps.changes.outputs.frontend == 'true'
         env:
           REGISTRY: ${{ steps.ecr-login.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
@@ -70,7 +71,7 @@ jobs:
           ORDERING_CHANGED: ${{ steps.changes.outputs.ordering }}
           PRODUCT_CHANGED: ${{ steps.changes.outputs.product }}
           FRONTEND_CHANGED: ${{ steps.changes.outputs.frontend }}
-          FORCE_ALL: ${{ github.event_name == 'workflow_dispatch' }}
+          FORCE_ALL: ${{ github.event_name == 'workflow_dispatch' || github.event.before == '0000000000000000000000000000000000000000' }}
         run: |
           set -euo pipefail
           declare -A changed=(
@@ -102,7 +103,7 @@ jobs:
           PYCODE
           done
       - name: Commit image tag changes for Argo CD
-        if: github.event_name == 'workflow_dispatch' || steps.changes.outputs.gateway == 'true' || steps.changes.outputs.member == 'true' || steps.changes.outputs.ordering == 'true' || steps.changes.outputs.product == 'true' || steps.changes.outputs.frontend == 'true'
+        if: github.event_name == 'workflow_dispatch' || github.event.before == '0000000000000000000000000000000000000000' || steps.changes.outputs.gateway == 'true' || steps.changes.outputs.member == 'true' || steps.changes.outputs.ordering == 'true' || steps.changes.outputs.product == 'true' || steps.changes.outputs.frontend == 'true'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
