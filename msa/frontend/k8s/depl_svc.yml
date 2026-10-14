@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: frontend-container
-        image: 256187519952.dkr.ecr.ap-northeast-2.amazonaws.com/frontend-service:REPLACE_WITH_CI_SHA
+        image: 256187519952.dkr.ecr.ap-northeast-2.amazonaws.com/frontend-service:4b95c73cabf76af51b5fe48450f9fc2633e6fa89
         ports:
         - containerPort: 80
 ---
