@@ -20,7 +20,7 @@ spec:
       serviceAccountName: product-sa
       containers:
         - name: product-container
-          image: 111122223333.dkr.ecr.ap-northeast-2.amazonaws.com/product-service:REPLACE_WITH_CI_SHA
+          image: 256187519952.dkr.ecr.ap-northeast-2.amazonaws.com/product-service:REPLACE_WITH_CI_SHA
           ports:
             - containerPort: 8080
           resources:
