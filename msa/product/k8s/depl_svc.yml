@@ -20,7 +20,7 @@ spec:
       serviceAccountName: product-sa
       containers:
         - name: product-container
-          image: 256187519952.dkr.ecr.ap-northeast-2.amazonaws.com/product-service:6ce91cfbe3c3c1bc766c3a9aae4474dbba0192e6
+          image: 256187519952.dkr.ecr.ap-northeast-2.amazonaws.com/product-service:80a9ab6f51be0f5a704dd41b98df356a59e4864c
           ports:
             - containerPort: 8080
           resources:

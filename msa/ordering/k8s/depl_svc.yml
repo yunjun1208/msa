@@ -20,7 +20,7 @@ spec:
       serviceAccountName: ordering-sa
       containers:
       - name: ordering-container
-        image: 256187519952.dkr.ecr.ap-northeast-2.amazonaws.com/ordering-service:6ce91cfbe3c3c1bc766c3a9aae4474dbba0192e6
+        image: 256187519952.dkr.ecr.ap-northeast-2.amazonaws.com/ordering-service:80a9ab6f51be0f5a704dd41b98df356a59e4864c
         ports:
         - containerPort: 8080
         resources:
