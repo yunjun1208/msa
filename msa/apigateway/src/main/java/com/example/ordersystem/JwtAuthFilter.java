@@ -10,12 +10,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+import org.springframework.core.Ordered;
 
 @Component
-public class JwtAuthFilter implements GlobalFilter {
+public class JwtAuthFilter implements GlobalFilter, Ordered {
 
     @Value("${jwt.secretKey}")
     private String secretKey;
+
+    @Override
+    public int getOrder() {
+        return -100;
+    }
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
