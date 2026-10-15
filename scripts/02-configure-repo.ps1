@@ -87,6 +87,14 @@ $frontendServicePath = Join-Path (Get-Location) 'msa/frontend/k8s/depl_svc.yml'
 $frontendService = [System.IO.File]::ReadAllText($frontendServicePath)
 $frontendService = $frontendService.Replace('__NLB_SITE_DOMAIN__', $domain)
 $frontendService = $frontendService.Replace('__NLB_CERT_ARN__', $cert)
+# Rebuild-safe annotation refresh, including already-resolved values.
+$certificatePattern = '(?m)^([ \t]*service\.beta\.kubernetes\.io/aws-load-balancer-ssl-cert:[ \t]*)[^\r\n]+(?=\r?$)'
+$hostnamePattern = '(?m)^([ \t]*external-dns\.kubernetes\.io/hostname:[ \t]*)[^\r\n]+(?=\r?$)'
+if ([regex]::Matches($frontendService,$certificatePattern).Count -ne 1 -or [regex]::Matches($frontendService,$hostnamePattern).Count -ne 1) {
+    throw 'Expected one certificate annotation and one hostname annotation.'
+}
+$frontendService = [regex]::Replace($frontendService,$certificatePattern,{param($m) $m.Groups[1].Value + '"' + $cert + '"'})
+$frontendService = [regex]::Replace($frontendService,$hostnamePattern,{param($m) $m.Groups[1].Value + '"' + $domain + '"'})
 if ($frontendService.Contains('__NLB_')) {
     throw 'Unresolved NLB Service placeholders'
 }
@@ -124,7 +132,7 @@ $jwtEntry = '        - name: JWT_ACCESS_SECRET'
 $originValue = "          value: 'https://$domain'"
 
 # 기존 APP_ALLOWED_ORIGIN 선언 확인
-$existingOrigin = '(?m)^[ \t]*- name: APP_ALLOWED_ORIGIN[ \t]*$'
+$existingOrigin = '(?m)^[ \t]*- name: APP_ALLOWED_ORIGIN[ \t]*\r?$'
 
 if ([regex]::IsMatch($contents, $existingOrigin)) {
 
