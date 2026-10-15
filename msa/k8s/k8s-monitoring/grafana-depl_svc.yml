@@ -10,6 +10,8 @@ spec:
       app: grafana
   template:
     metadata:
+      annotations:
+        msa.soldesk/grafana-provisioning-version: "1"
       labels:
         app: grafana
     spec:
@@ -25,14 +27,31 @@ spec:
                   name: grafana-admin
                   key: GF_SECURITY_ADMIN_PASSWORD
           resources:
-          # 컨테이너가 사용할수 있는 리소스의 최대치
             limits:
               cpu: "1"
               memory: "500Mi"
-          # 컨테이너가 시작될떄 보장받아야 하는 최소 자원
             requests:
               cpu: "100m"
               memory: "250Mi"
+          volumeMounts:
+            - name: provisioning
+              mountPath: /etc/grafana/provisioning
+              readOnly: true
+            - name: dashboards
+              mountPath: /var/lib/grafana/dashboards
+              readOnly: true
+      volumes:
+        - name: provisioning
+          configMap:
+            name: grafana-provisioning
+            items:
+              - key: datasource.yml
+                path: datasources/msa.yml
+              - key: dashboards.yml
+                path: dashboards/msa.yml
+        - name: dashboards
+          configMap:
+            name: grafana-msa-dashboard
 ---
 apiVersion: v1
 kind: Service

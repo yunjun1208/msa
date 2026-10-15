@@ -1,0 +1,420 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-msa-dashboard
+  namespace: monitoring
+data:
+  msa-overview.json: |
+    {
+      "title": "AWS EKS MSA - Service Overview",
+      "uid": "aws-eks-msa-overview",
+      "schemaVersion": 39,
+      "version": 1,
+      "editable": false,
+      "tags": [
+        "eks",
+        "msa",
+        "gitops"
+      ],
+      "timezone": "browser",
+      "refresh": "20s",
+      "time": {
+        "from": "now-30m",
+        "to": "now"
+      },
+      "annotations": {
+        "list": []
+      },
+      "templating": {
+        "list": []
+      },
+      "panels": [
+        {
+          "id": 1,
+          "title": "Spring 수집 정상 대상 수",
+          "type": "stat",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "msa-prometheus"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 8,
+            "h": 5
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(up{job=\"spring-apps\"})",
+              "legendFormat": "",
+              "range": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none"
+          }
+        },
+        {
+          "id": 2,
+          "title": "사용 가능한 서비스 Pod 수",
+          "type": "stat",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "msa-prometheus"
+          },
+          "gridPos": {
+            "x": 8,
+            "y": 0,
+            "w": 8,
+            "h": 5
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(kube_deployment_status_replicas_available{namespace=\"soldesk\"})",
+              "legendFormat": "",
+              "range": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none"
+          }
+        },
+        {
+          "id": 3,
+          "title": "최근 15분 서비스 컨테이너 재시작",
+          "type": "stat",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "msa-prometheus"
+          },
+          "gridPos": {
+            "x": 16,
+            "y": 0,
+            "w": 8,
+            "h": 5
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"soldesk\"}[15m]))",
+              "legendFormat": "",
+              "range": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "colorMode": "value",
+            "graphMode": "none"
+          }
+        },
+        {
+          "id": 4,
+          "title": "Spring 대상 수집 상태",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "msa-prometheus"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 5,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "up{job=\"spring-apps\"}",
+              "legendFormat": "{{instance}}",
+              "range": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          }
+        },
+        {
+          "id": 5,
+          "title": "서비스 프로세스 CPU 사용률",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "msa-prometheus"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 5,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "process_cpu_usage{job=\"spring-apps\"}",
+              "legendFormat": "{{instance}}",
+              "range": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          }
+        },
+        {
+          "id": 6,
+          "title": "서비스 JVM Heap 사용량",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "msa-prometheus"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 13,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "sum by (instance) (jvm_memory_used_bytes{job=\"spring-apps\",area=\"heap\"})",
+              "legendFormat": "{{instance}}",
+              "range": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          }
+        },
+        {
+          "id": 7,
+          "title": "Hikari 활성 DB 연결",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "msa-prometheus"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 13,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "hikaricp_connections_active{job=\"spring-apps\"}",
+              "legendFormat": "{{instance}}",
+              "range": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          }
+        },
+        {
+          "id": 8,
+          "title": "Hikari DB 연결 풀 상한",
+          "type": "timeseries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "msa-prometheus"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 21,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "hikaricp_connections_max{job=\"spring-apps\"}",
+              "legendFormat": "{{instance}}",
+              "range": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          }
+        }
+      ]
+    }
